@@ -10,7 +10,7 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 # ==================== Class User ====================
 class User(UserMixin):
-    def _init_(self, nrp, nama, is_admin):
+    def __init__(self, nrp, nama, is_admin):
         self.id = nrp  # id untuk Flask-Login
         self.nrp = nrp
         self.nama = nama
@@ -120,7 +120,7 @@ def verify_otp():
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT OTP, OTP_EXPIRED_AT, IS_ADMIN
+        SELECT OTP, OTP_EXPIRED_AT, IS_ADMIN, NAMA
         FROM azr.USERS
         WHERE NRP = ?
     """, (nrp,))
@@ -131,7 +131,7 @@ def verify_otp():
         conn.close()
         return redirect(url_for('auth.login'))
 
-    otp_db, expired_at, is_admin = result
+    otp_db, expired_at, is_admin, nama = result
 
     if not otp_db or datetime.utcnow() > expired_at:
         cursor.execute("""
@@ -156,7 +156,7 @@ def verify_otp():
             conn.commit()
             conn.close()
 
-            login_user(User(nrp, bool(is_admin)))
+            login_user(User(nrp, nama, bool(is_admin)))
             session.pop('pending_nrp', None)
 
             return redirect(url_for('main.index'))

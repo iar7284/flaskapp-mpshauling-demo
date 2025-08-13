@@ -17,8 +17,9 @@
                 <img src="{{ url_for('static', filename='images/20250325160734-AlamTri-gede.png') }}" alt="Logo" style="height:32px;" class="me-2">
                 <span class="fw-bold text-success">MPS Hauling</span>
             </a>
+
             {% if current_user.is_authenticated %}
-            <div class="d-flex align-items-center">
+            <div class="d-flex align-items-center flex-wrap gap-3">
                 <span class="navbar-text text-dark">
                     NRP : <strong>{{ current_user.nrp or current_user.id }}</strong>
                     &nbsp;&nbsp;&nbsp;
