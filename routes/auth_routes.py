@@ -10,21 +10,25 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 # ==================== Class User ====================
 class User(UserMixin):
-    def __init__(self, nrp, is_admin):
-        self.id = nrp
+    def _init_(self, nrp, nama, is_admin):
+        self.id = nrp  # id untuk Flask-Login
         self.nrp = nrp
+        self.nama = nama
         self.is_admin = is_admin
+
 
 # ==================== Loader ====================
 def load_user(user_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT IS_ADMIN FROM azr.USERS WHERE NRP = ?", (user_id,))
+    cursor.execute("SELECT NRP, NAMA, IS_ADMIN FROM azr.USERS WHERE NRP = ?", (user_id,))
     row = cursor.fetchone()
     conn.close()
     if row:
-        return User(user_id, bool(row[0]))
+        user = User(nrp=row[0], nama=row[1], is_admin=bool(row[2]))
+        return user
     return None
+
 
 # ==================== Kirim Email OTP ====================
 def send_email_otp(recipient_email, otp):

@@ -19,8 +19,11 @@
             </a>
             {% if current_user.is_authenticated %}
             <div class="d-flex align-items-center">
-                <span class="navbar-text text-dark me-3">NRP: <strong>{{ current_user.id }}</strong></span>
-                <span class="navbar-text text-dark me-3">Login Name: <strong>{{ current_user.id }}</strong></span>
+                <span class="navbar-text text-dark">
+                    NRP : <strong>{{ current_user.nrp or current_user.id }}</strong>
+                    &nbsp;&nbsp;&nbsp;
+                    Username : <strong>{{ current_user.nama or current_user.username or '-' }}</strong>
+                </span>
                 <a class="btn btn-success btn-sm" href="{{ url_for('auth.logout') }}">Logout</a>
             </div>
             {% endif %}
