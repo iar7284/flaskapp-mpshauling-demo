@@ -1,0 +1,20 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="position-relative d-flex justify-content-center align-items-center min-vh-100"
+     style="background-image: url('/static/images/Safety Friendly.jpg'); background-size: cover; background-position: center;">
+
+    <div class="card shadow w-100" style="max-width: 400px;">
+        <div class="card-body">
+            <h3 class="text-center mb-3 text-success">Verifikasi OTP</h3>
+            <p class="text-center">Masukkan kode OTP yang dikirim ke email Anda.</p>
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="otp" class="form-label">Kode OTP</label>
+                    <input type="text" name="otp" class="form-control" maxlength="6" required>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Verifikasi</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

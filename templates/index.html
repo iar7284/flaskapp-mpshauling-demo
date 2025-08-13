@@ -1,0 +1,131 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<!-- HERO CAROUSEL -->
+<div id="heroCarousel" class="carousel slide mb-4 shadow" data-bs-ride="carousel">
+    <div class="carousel-inner rounded" style="max-height: 400px; overflow: hidden;">
+        <div class="carousel-item active">
+            <img src="{{ url_for('static', filename='images/Loading.jpg') }}"
+                 class="d-block w-100"
+                 style="object-fit: cover; height: 400px;"
+                 alt="Slide 1" loading="eager">
+            <div class="carousel-caption d-flex flex-column align-items-center justify-content-center h-100">
+                <div class="bg-dark bg-opacity-50 rounded p-3 text-center">
+                    <h4 class="fw-bold">Selamat Datang di MPS Hauling</h4>
+                    <p class="mb-0">Portal manajemen data operasional Anda</p>
+                </div>
+            </div>
+        </div>
+        <div class="carousel-item">
+            <img src="{{ url_for('static', filename='images/CSA.jpg') }}"
+                 class="d-block w-100"
+                 style="object-fit: cover; height: 400px;"
+                 alt="Slide 2" loading="lazy">
+            <div class="carousel-caption d-flex flex-column align-items-center justify-content-center h-100">
+                <div class="bg-dark bg-opacity-50 rounded p-3 text-center">
+                    <h4 class="fw-bold">Update Terbaru</h4>
+                    <p class="mb-0">Pantau informasi revisi & laporan terbaru di sini</p>
+                </div>
+            </div>
+        </div>
+        <div class="carousel-item">
+            <img src="{{ url_for('static', filename='images/Trailer2.jpg') }}"
+                 class="d-block w-100"
+                 style="object-fit: cover; height: 400px;"
+                 alt="Slide 3" loading="lazy">
+            <div class="carousel-caption d-flex flex-column align-items-center justify-content-center h-100">
+                <div class="bg-dark bg-opacity-50 rounded p-3 text-center">
+                    <h4 class="fw-bold">Mudah & Cepat</h4>
+                    <p class="mb-0">Akses data kapan saja, di mana saja</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+    </button>
+</div>
+
+<!-- DASHBOARD MENU -->
+<h4 class="text-center fw-bold mb-3 text-dark">
+    <span class="text-success">Dashboard</span> MPS Hauling
+</h4>
+<div class="row row-cols-2 row-cols-md-4 g-3">
+    {% for card in [
+    {'title': 'Data HM', 'url': 'hm.view_hm', 'color': 'primary', 'icon': 'bi-speedometer2', 'external': False},
+    {'title': 'Data Absen', 'url': 'view_absen_routes.view_absen', 'color': 'success', 'icon': 'bi-people', 'external': False},
+    {'title': 'Hauling', 'url': 'hauling.view_hauling', 'color': 'warning', 'icon': 'bi-truck', 'external': False},
+    {'title': 'ROM', 'url': 'rom.view_rom', 'color': 'info', 'icon': 'bi-building', 'external': False},
+    {'title': 'MOR', 'url': 'mor.view_mor', 'color': 'secondary', 'icon': 'bi-graph-up', 'external': False},
+    {'title': 'BPJS', 'url': 'https://sites.google.com/view/hrsbpjs', 'color': 'primary', 'icon': 'bi-shield-plus', 'external': True},
+    {'title': 'PAYSLIP', 'url': 'https://app-saptaindra.msappproxy.net/paysliponline', 'color': 'primary', 'icon': 'bi-receipt', 'external': True},
+    ] %}
+    <div class="col">
+        <div class="card shadow-sm h-100 border-0 text-center p-2">
+            <div class="card-body p-2">
+                <i class="bi {{ card.icon }} fs-2 text-{{ card.color }}"></i>
+                <h6 class="mt-2 fw-semibold">{{ card.title }}</h6>
+                <a href="{{ card.url if card.external else url_for(card.url) }}"
+                   class="btn btn-sm btn-{{ card.color }} mt-2 px-3"
+                   {% if card.external %} target="_blank" rel="noopener noreferrer" {% endif %}>
+                    Lihat
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    {# Ajukan Revisi hanya untuk user biasa, bukan admin #}
+    {% if not (current_user.is_authenticated and current_user.is_admin) %}
+    <div class="col">
+        <div class="card shadow-sm h-100 border-0 text-center p-2">
+            <div class="card-body p-2">
+                <i class="bi bi-pencil-square fs-2 text-danger"></i>
+                <h6 class="mt-2 fw-semibold">Ajukan Revisi</h6>
+                <a href="{{ url_for('revisi.revisi_form') }}" class="btn btn-sm btn-danger mt-2 px-3">Lihat</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if current_user.is_authenticated and current_user.is_admin %}
+    <div class="col">
+        <div class="card shadow-sm h-100 border-0 text-center p-2">
+            <div class="card-body p-2">
+                <i class="bi bi-upload fs-2 text-success"></i>
+                <h6 class="mt-2 fw-semibold">Upload Data</h6>
+                <a href="{{ url_for('upload.upload') }}" class="btn btn-sm btn-success mt-2 px-3">Upload</a>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card shadow-sm h-100 border-0 text-center p-2">
+            <div class="card-body p-2">
+                <i class="bi bi-exclamation-triangle fs-2 text-danger"></i>
+                <h6 class="mt-2 fw-semibold">
+                    Revisi Masuk
+                    {% if pending_revisi_count and pending_revisi_count > 0 %}
+                    <span class="badge bg-danger">{{ pending_revisi_count }}</span>
+                    {% endif %}
+                </h6>
+                <a href="{{ url_for('revisi.admin_revisi_list') }}" class="btn btn-sm btn-danger mt-2 px-3">Tinjau</a>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card shadow-sm h-100 border-0 text-center p-2">
+            <div class="card-body p-2">
+                <i class="bi bi-gear fs-2 text-info"></i>
+                <h6 class="mt-2 fw-semibold">Manajemen User</h6>
+                <a href="{{ url_for('admin_user.manage_users') }}" class="btn btn-sm btn-info mt-2 px-3">Kelola</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+{% endblock %}

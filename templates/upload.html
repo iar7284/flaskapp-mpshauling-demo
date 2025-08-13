@@ -1,0 +1,75 @@
+{% extends 'layout.html' %}
+{% block title %}Upload Data - MPS 3{% endblock %}
+
+{% block content %}
+
+<!-- Judul dengan gambar background -->
+<div class="d-flex align-items-center justify-content-center mb-4 rounded"
+     style="background: url('{{ url_for('static', filename='images/Trailer1.jpg') }}') center/cover no-repeat; height: 300px;">
+    <h3 class="fw-bold text-white text-center px-3 py-2 rounded" style="background: rgba(0,0,0,0.5);">
+        Upload Data Excel
+    </h3>
+</div>
+
+<!-- Form Upload Full Width -->
+<div class="px-2 mb-5">
+    <div class="border rounded bg-white p-4" style="background: rgba(255,255,255,0.95);">
+        <h5 class="fw-bold mb-4 text-success text-center">Upload Data</h5>
+
+        <form method="POST" enctype="multipart/form-data" onsubmit="return validateAndUpload()">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="category" class="form-label">Pilih Kategori Data</label>
+                    <select class="form-select" id="category" name="category" required>
+                        <option value="">-- Pilih Kategori --</option>
+                        <option value="hm">HM</option>
+                        <option value="absen">Absen</option>
+                        <option value="hauling">Insentif Hauling</option>
+                        <option value="rom">Insentif ROM</option>
+                        <option value="mor">Insentif MOR</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="excel_file" class="form-label">Pilih File Excel</label>
+                    <input class="form-control" type="file" name="excel_file" id="excel_file" accept=".xls,.xlsx" required>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button id="btnUpload" type="submit" class="btn btn-success">Upload</button>
+                <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Kembali</a>
+            </div>
+        </form>
+
+        <div id="loading" class="text-center mt-4" style="display: none;">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 fw-bold text-success">File sedang diunggah, mohon tunggu...</p>
+        </div>
+
+        <hr class="my-5">
+        <h5>Unduh Template Excel:</h5>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('upload.download_template', category='hm') }}" class="btn btn-outline-success btn-sm">Template HM</a>
+            <a href="{{ url_for('upload.download_template', category='absen') }}" class="btn btn-outline-success btn-sm">Template Absen</a>
+            <a href="{{ url_for('upload.download_template', category='hauling') }}" class="btn btn-outline-success btn-sm">Template Hauling</a>
+            <a href="{{ url_for('upload.download_template', category='rom') }}" class="btn btn-outline-success btn-sm">Template ROM</a>
+            <a href="{{ url_for('upload.download_template', category='mor') }}" class="btn btn-outline-success btn-sm">Template MOR</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function validateAndUpload() {
+        const fileInput = document.getElementById('excel_file');
+        const category = document.getElementById('category').value;
+        const btnUpload = document.getElementById('btnUpload');
+        if (!category) { alert("Silakan pilih kategori terlebih dahulu."); return false; }
+        if (!fileInput.files.length) { alert("Silakan pilih file Excel."); return false; }
+        const allowedExtensions = /(\.xls|\.xlsx)$/i;
+        if (!allowedExtensions.exec(fileInput.value)) { alert("Format file tidak valid."); fileInput.value = ''; return false; }
+        btnUpload.disabled = true; document.getElementById('loading').style.display = 'block'; return true;
+    }
+</script>
+{% endblock %}

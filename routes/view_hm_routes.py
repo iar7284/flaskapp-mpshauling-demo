@@ -1,0 +1,177 @@
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask_login import login_required, current_user
+import pandas as pd
+import pyodbc
+import math
+
+hm_bp = Blueprint('hm', __name__)
+
+def get_connection():
+    return pyodbc.connect(
+        'DRIVER={ODBC Driver 17 for SQL Server};'
+        'SERVER=sqlmisis-test.public.ca87cd4bc197.database.windows.net,3342;'
+        'DATABASE=BELAJAR_SYNAPSE;'
+        'UID=belajar_synapse_user;'
+        'PWD=belajarsynapse123#'
+    )
+
+@hm_bp.route('/view/hm', methods=['GET'])
+@login_required
+def view_hm():
+    try:
+        conn = get_connection()
+        search = request.args.get('search', '').strip()
+        query = "SELECT * FROM azr.HM"
+        params = []
+
+        # Deteksi kolom dulu untuk user non-admin
+        cursor = conn.cursor()
+        cursor.execute("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'HM'")
+        columns = [row[0] for row in cursor.fetchall()]
+
+        if not current_user.is_admin:
+            if 'NRP1' in columns and 'NRP2' in columns:
+                query += " WHERE NRP = ? OR NRP1 = ? OR NRP2 = ?"
+                params.extend([current_user.id, current_user.id, current_user.id])
+            else:
+                query += " WHERE NRP = ?"
+                params.append(current_user.id)
+
+        df = pd.read_sql(query, conn, params=params)
+        conn.close()
+
+        # Jika data kosong
+        if df.empty:
+            return render_template(
+                'view_hm.html',
+                data=[],
+                headers=[],
+                page=1,
+                pages=1,
+                request=request,
+                start_index=0,
+                end_index=0,
+                total=0
+            )
+
+        # Gabungkan NRP1 & NRP2 jika ada
+        if 'NRP1' in df.columns and 'NRP2' in df.columns:
+            df['NRP'] = df[['NRP1', 'NRP2']].astype(str).apply(
+                lambda x: ', '.join([v for v in x if v and v != 'nan']), axis=1
+            )
+            df.drop(columns=['NRP1', 'NRP2'], inplace=True)
+
+        # Hapus kolom KODE jika ada
+        if 'KODE' in df.columns:
+            df.drop(columns=['KODE'], inplace=True)
+
+        # Format tanggal
+        if 'TANGGAL' in df.columns:
+            df['TANGGAL'] = pd.to_datetime(df['TANGGAL'], errors='coerce').dt.strftime('%d %b %Y')
+
+        # Pencarian
+        if search:
+            mask = df.apply(lambda row: row.astype(str).str.contains(search, case=False, na=False).any(), axis=1)
+            df = df[mask]
+
+        # Pagination
+        page = request.args.get('page', 1, type=int)
+        per_page = 10
+        total = len(df)
+        pages = max(1, math.ceil(total / per_page))
+        start_index = (page - 1) * per_page + 1 if total > 0 else 0
+        end_index = min(start_index + per_page - 1, total)
+        data_paginated = df.iloc[start_index - 1:end_index] if total > 0 else []
+
+        return render_template(
+            'view_hm.html',
+            data=data_paginated.to_dict(orient='records'),
+            headers=df.columns,
+            page=page,
+            pages=pages,
+            request=request,
+            start_index=start_index,
+            end_index=end_index,
+            total=total
+        )
+
+    except Exception as e:
+        print("[ERROR VIEW HM]", e)
+        flash("Gagal mengambil data HM", "danger")
+        return redirect(url_for("upload.upload"))
+
+@hm_bp.route('/edit/hm', methods=['POST'])
+@login_required
+def edit_hm():
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    try:
+        form = request.form.to_dict()
+        nrp = form.get("NRP")
+        tanggal = form.get("TANGGAL")
+
+        if not nrp or not tanggal:
+            return jsonify({'success': False, 'message': 'NRP dan TANGGAL diperlukan'})
+
+        allowed_columns = [
+            'NAMA', 'SHIFT', 'UNIT', 'HM AWAL', 'HM AKHIR', 'RIT', 'HM', 'INSENTIF', 'KET'
+        ]
+        float_columns = ['HM AWAL', 'HM AKHIR', 'RIT', 'HM', 'INSENTIF']
+
+        update_fields = []
+        values = []
+        for col, val in form.items():
+            if col in ['NRP', 'TANGGAL']:
+                continue
+            if col not in allowed_columns:
+                continue
+
+            val = val.strip()
+            if val == "":
+                val = None
+            elif col in float_columns:
+                try:
+                    val = float(val)
+                except:
+                    return jsonify({'success': False, 'message': f'Nilai kolom {col} tidak valid (harus angka).'}), 400
+
+            update_fields.append(f"[{col}] = ?")
+            values.append(val)
+
+        if not update_fields:
+            return jsonify({'success': False, 'message': 'Tidak ada data yang diubah'}), 400
+
+        values += [nrp, tanggal]
+        query = f"UPDATE azr.HM SET {', '.join(update_fields)} WHERE NRP = ? AND TANGGAL = ?"
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(query, values)
+        conn.commit()
+
+        return jsonify({'success': True})
+    except Exception as e:
+        print("[ERROR UPDATE HM]", e)
+        return jsonify({'success': False, 'message': str(e)})
+
+@hm_bp.route('/delete/hm', methods=['POST'])
+@login_required
+def delete_hm():
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    try:
+        data = request.get_json()
+        nrp = data.get("NRP")
+        tanggal = data.get("TANGGAL")
+
+        if not nrp or not tanggal:
+            return jsonify({'success': False, 'message': 'NRP dan TANGGAL wajib diisi'}), 400
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM azr.HM WHERE NRP = ? AND TANGGAL = ?", (nrp, tanggal))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        print("[ERROR DELETE HM]", e)
+        return jsonify({'success': False, 'message': str(e)}), 500

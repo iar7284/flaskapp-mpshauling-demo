@@ -1,0 +1,202 @@
+{% extends 'layout.html' %}
+{% block content %}
+
+<!-- Header -->
+<div class="d-flex align-items-center justify-content-center mb-4 rounded"
+     style="background: url('{{ url_for('static', filename='images/Loading4.jpg') }}') center/cover no-repeat; height: 300px;">
+    <h3 class="fw-bold text-white text-center px-3 py-2 rounded" style="background: rgba(0,0,0,0.5);">
+        Daftar Pengajuan Revisi
+    </h3>
+</div>
+
+{% if has_new_revisi %}
+<div class="alert alert-warning text-center fw-bold">
+    <i class="bi bi-exclamation-triangle"></i> Ada pengajuan revisi baru yang belum ditindaklanjuti!
+</div>
+{% endif %}
+
+{% set absen_list = revisi_list | selectattr("KATEGORI", "equalto", "ABSEN") | list %}
+{% set hm_list = revisi_list | selectattr("KATEGORI", "equalto", "HM") | list %}
+
+<!-- ============== KATEGORI ABSEN ============== -->
+<h5 class="text-success fw-bold mb-3">Kategori ABSEN</h5>
+{% if absen_list %}
+<div class="table-responsive mb-4 border rounded bg-white p-2">
+    <table class="table table-hover table-bordered align-middle mb-0">
+        <thead class="text-center bg-success text-white fw-bold">
+            <tr>
+                <th>NRP</th>
+                <th>Area</th>
+                <th>Detail</th>
+                <th>Lampiran</th>
+                <th>Status</th>
+                <th>Waktu</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in absen_list %}
+            <tr>
+                <td>{{ item['NRP'] }}</td>
+                <td>{{ item['AREA_KERJA'] }}</td>
+                <td>{{ item['DETAIL_REVISI'] }}</td>
+                <td class="text-center">
+                    {% if item['LAMPIRAN_FILE'] %}
+                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#previewModal"
+                            data-file="{{ url_for('revisi.preview_lampiran', filename=item['LAMPIRAN_FILE']) }}"
+                            data-type="{{ 'pdf' if item['IS_PDF'] else 'image' }}">
+                        <i class="bi bi-eye"></i> Lihat
+                    </button>
+                    {% else %}
+                    <span class="text-muted">Tidak ada</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-{{ 'warning text-dark' if item['STATUS'] == 'Pending' else 'success' }}">
+                        {{ item['STATUS'] }}
+                    </span>
+                </td>
+                <td>{{ item['CREATED_AT'].strftime('%d %b %Y') }}</td>
+                <td class="text-center">
+                    {% if item['STATUS'] == 'Pending' %}
+                    <button class="btn btn-sm btn-success done-btn" data-id="{{ item['ID'] }}" data-type="ABSEN">
+                        <i class="bi bi-check2-circle"></i> Tandai Done
+                    </button>
+                    {% else %}
+                    <i class="text-muted">Selesai</i>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info text-center">Belum ada pengajuan revisi absen.</div>
+{% endif %}
+
+<!-- ============== KATEGORI HM ============== -->
+<h5 class="text-success fw-bold mb-3">Kategori HM</h5>
+{% if hm_list %}
+<div class="table-responsive mb-4 border rounded bg-white p-2">
+    <table class="table table-hover table-bordered align-middle mb-0">
+        <thead class="text-center bg-success text-white fw-bold">
+            <tr>
+                <th>NRP</th>
+                <th>Detail</th>
+                <th>KM Awal</th>
+                <th>KM Akhir</th>
+                <th>HM Awal</th>
+                <th>HM Akhir</th>
+                <th>Ritasi</th>
+                <th>Lampiran</th>
+                <th>Status</th>
+                <th>Waktu</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in hm_list %}
+            <tr>
+                <td>{{ item['NRP'] }}</td>
+                <td>{{ item['DETAIL_REVISI'] }}</td>
+                <td>{{ item['KM_AWAL'] }}</td>
+                <td>{{ item['KM_AKHIR'] }}</td>
+                <td>{{ item['HM_AWAL'] }}</td>
+                <td>{{ item['HM_AKHIR'] }}</td>
+                <td>{{ item['RITASI'] }}</td>
+                <td class="text-center">
+                    {% if item['LAMPIRAN_FILE'] %}
+                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#previewModal"
+                            data-file="{{ url_for('revisi.preview_lampiran', filename=item['LAMPIRAN_FILE']) }}"
+                            data-type="{{ 'pdf' if item['IS_PDF'] else 'image' }}">
+                        <i class="bi bi-eye"></i> Lihat
+                    </button>
+                    {% else %}
+                    <span class="text-muted">Tidak ada</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-{{ 'warning text-dark' if item['STATUS'] == 'Pending' else 'success' }}">
+                        {{ item['STATUS'] }}
+                    </span>
+                </td>
+                <td>{{ item['CREATED_AT'].strftime('%d %b %Y') }}</td>
+                <td class="text-center">
+                    {% if item['STATUS'] == 'Pending' %}
+                    <button class="btn btn-sm done-btn {% if item['IS_EDITED'] %}btn-success{% else %}btn-secondary{% endif %}"
+                            data-id="{{ item['ID'] }}"
+                            data-type="HM"
+                            data-edited="{{ 'true' if item['IS_EDITED'] else 'false' }}"
+                            {% if not item['IS_EDITED'] %}disabled title="Edit dulu data sebelum menandai Done" {% endif %}>
+                        <i class="bi bi-check2-circle"></i> Tandai Done
+                    </button>
+                    {% else %}
+                    <i class="text-muted">Selesai</i>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info text-center">Belum ada pengajuan revisi HM.</div>
+{% endif %}
+
+<!-- Modal Preview -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Preview Lampiran</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body d-flex justify-content-center align-items-center p-0">
+                <div id="previewContent" class="w-100 h-100 d-flex justify-content-center align-items-center bg-dark"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var previewModal = document.getElementById('previewModal');
+        previewModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var fileUrl = button.getAttribute('data-file');
+            var fileType = button.getAttribute('data-type');
+            var previewContent = document.getElementById('previewContent');
+            previewContent.innerHTML = (fileType === 'pdf') ?
+                `<embed src="${fileUrl}" type="application/pdf" style="width: 100%; height: 100vh;" />` :
+                `<img src="${fileUrl}" alt="Lampiran" style="max-width: 100%; max-height: 100vh; object-fit: contain;" />`;
+        });
+        previewModal.addEventListener('hidden.bs.modal', function () {
+            document.getElementById('previewContent').innerHTML = '';
+        });
+
+        document.querySelectorAll('.done-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                if (this.disabled) {
+                    alert("Edit dulu data revisi HM sebelum menandai Done!");
+                    return;
+                }
+                const id = this.dataset.id;
+                if (!confirm("Apakah Anda yakin ingin menandai revisi ini sebagai selesai?")) return;
+                fetch(`/admin/revisi/update/${id}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.message) {
+                            alert(data.message);
+                            location.reload();
+                        } else {
+                            alert(data.error || "Gagal memperbarui status.");
+                        }
+                    })
+                    .catch(() => alert("Terjadi kesalahan saat memperbarui status."));
+            });
+        });
+    });
+</script>
+{% endblock %}

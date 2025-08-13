@@ -1,0 +1,166 @@
+{% extends 'layout.html' %}
+{% block content %}
+
+<!-- Judul dengan gambar background -->
+<div class="d-flex align-items-center justify-content-center mb-4 rounded"
+     style="background: url('{{ url_for('static', filename='images/P5M.jpg') }}') center/cover no-repeat; height: 300px;">
+    <h3 class="fw-bold text-white text-center px-3 py-2 rounded" style="background: rgba(0,0,0,0.5);">
+        Data HM
+    </h3>
+</div>
+
+<!-- Form Pencarian -->
+<div class="px-2 mb-3">
+    <form method="GET">
+        <div class="input-group">
+            <input type="text" class="form-control" name="search" placeholder="Cari data..." value="{{ request.args.get('search', '') }}">
+            <button type="submit" class="btn btn-success">Cari</button>
+        </div>
+    </form>
+</div>
+
+<!-- Tabel Data -->
+<div class="px-2">
+    <div class="table-responsive border rounded bg-white">
+        <table class="table table-hover table-bordered table-sm align-middle mb-0">
+            <thead class="text-center">
+                <tr>
+                    {% if current_user.is_admin %}
+                    <th class="bg-success text-white fw-bold text-nowrap">Aksi</th>
+                    {% endif %}
+                    {% for header in headers %}
+                    <th class="bg-success text-white fw-bold text-nowrap">{{ header }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% if data %}
+                {% for row in data %}
+                <tr class="text-center">
+                    {% if current_user.is_admin %}
+                    <td>
+                        <button class="btn btn-sm btn-warning btn-edit mb-1"
+                                {% for header in headers %}
+                                data-{{ header|lower|replace(' ', '')|replace('.', '') }}="{{ row[header] }}"
+                                {% endfor %}>
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger btn-delete"
+                                data-nrp="{{ row['NRP'] }}"
+                                data-tanggal="{{ row['TANGGAL'] }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                    {% endif %}
+                    {% for header in headers %}
+                    <td class="text-nowrap text-truncate">
+                        {% if row[header] is number %}
+                        {{ ("%.2f"|format(row[header])).rstrip('0').rstrip('.') }}
+                        {% else %}
+                        {{ row[header] }}
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="{{ headers|length + (1 if current_user.is_admin else 0) }}" class="text-center text-muted">
+                        Tidak ada data ditemukan
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if pages > 1 %}
+<nav aria-label="Page navigation" class="mt-3">
+    <ul class="pagination justify-content-center pagination-sm">
+        {% if page > 1 %}
+        <li class="page-item"><a class="page-link rounded-pill" href="?page=1&search={{ request.args.get('search', '') }}">&laquo; First</a></li>
+        <li class="page-item"><a class="page-link rounded-pill" href="?page={{ page - 1 }}&search={{ request.args.get('search', '') }}">Previous</a></li>
+        {% endif %}
+        {% set start = page - 2 if page - 2 > 0 else 1 %}
+        {% set end = page + 2 if page + 2 <= pages else pages %}
+        {% for p in range(start, end + 1) %}
+        <li class="page-item {% if p == page %}active{% endif %}"><a class="page-link rounded-pill" href="?page={{ p }}&search={{ request.args.get('search', '') }}">{{ p }}</a></li>
+        {% endfor %}
+        {% if page < pages %}
+        <li class="page-item"><a class="page-link rounded-pill" href="?page={{ page + 1 }}&search={{ request.args.get('search', '') }}">Next</a></li>
+        <li class="page-item"><a class="page-link rounded-pill" href="?page={{ pages }}&search={{ request.args.get('search', '') }}">Last &raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+<div class="text-center text-muted mb-2">
+    Menampilkan data {{ start_index }} sampai {{ end_index }} dari total {{ total }} data.
+</div>
+{% endif %}
+
+<!-- Modal Edit -->
+{% if current_user.is_admin %}
+<div class="modal fade" id="editHmModal" tabindex="-1" aria-labelledby="editHmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form id="editHmForm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-success">Edit Data HM</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body row">
+                    {% for col in headers %}
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label">{{ col }}</label>
+                        <input type="text" class="form-control" name="{{ col }}" id="edit-{{ col|lower|replace(' ', '-')|replace('.', '-') }}">
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Simpan</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.btn-edit').forEach(btn => {
+    btn.addEventListener('click', function () {
+        {% for col in headers %}
+        document.getElementById('edit-{{ col|lower|replace(' ', '-')|replace('.', '-') }}').value =
+            this.dataset['{{ col|lower|replace(' ', '')|replace('.', '') }}'] || '';
+        {% endfor %}
+        new bootstrap.Modal(document.getElementById('editHmModal')).show();
+    });
+});
+
+document.getElementById('editHmForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    fetch("/edit/hm", { method: "POST", body: formData })
+    .then(res => res.json())
+    .then(res => { if (res.success) location.reload(); else alert(res.message || "Gagal menyimpan data."); });
+});
+
+document.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.addEventListener('click', function () {
+        if (confirm('Apakah yakin ingin menghapus data ini?')) {
+            const nrp = this.dataset.nrp;
+            const tanggal = this.dataset.tanggal;
+            fetch("/delete/hm", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ NRP: nrp, TANGGAL: tanggal })
+            })
+            .then(res => res.json())
+            .then(res => { if (res.success) location.reload(); else alert(res.message || 'Gagal menghapus data.'); });
+        }
+    });
+});
+</script>
+{% endif %}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+{% endblock %}

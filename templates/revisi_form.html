@@ -1,0 +1,144 @@
+{% extends 'layout.html' %}
+{% block content %}
+
+<!-- Header -->
+<div class="d-flex align-items-center justify-content-center mb-4 rounded"
+     style="background: url('{{ url_for('static', filename='images/Loading2.jpg') }}') center/cover no-repeat; height: 300px;">
+    <h3 class="fw-bold text-white text-center px-3 py-2 rounded" style="background: rgba(0,0,0,0.5);">
+        Form Pengajuan Revisi Data
+    </h3>
+</div>
+
+<!-- Form Revisi -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label fw-bold">NRP</label>
+                <input type="text" class="form-control" value="{{ current_user.nrp }}" readonly>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Kategori Data</label>
+                <select class="form-select" id="kategori" name="kategori" required>
+                    <option value="">-- Pilih Kategori --</option>
+                    <option value="ABSEN">ABSEN</option>
+                    <option value="HM">HM</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Tanggal Data</label>
+                <input type="date" class="form-control" name="tanggal" required>
+                <small class="text-muted">Tanggal data ABSEN / HM yang ingin direvisi</small>
+            </div>
+
+            <div id="absen-section" style="display:none;">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Area Kerja</label>
+                    <select class="form-select" name="area_kerja">
+                        <option value="">-- Pilih --</option>
+                        <option>CSA 34</option>
+                        <option>CSA 35</option>
+                        <option>CSA 65</option>
+                        <option>CSA 69</option>
+                        <option>ROM</option>
+                        <option>KELANIS</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Jenis Revisi Absen</label>
+                    {% for opsi in [
+                    'EVIDEN/BUKTI IZIN KETIDAKHADIRAN ADA (DIDATA MASIH ALPA)',
+                    'JUMLAH LEMBURAN TIDAK SESUAI HARI KERJA',
+                    'FINGER IN/OUT ADA (DI DATA TIDAK ADA)',
+                    'SKL BELUM MASUK',
+                    'HADIR LEMBURAN BELUM MASUK',
+                    'REVISI KETERANGAN (CONTOH: SEHARUSNYA SKD NAMUN TERTULIS CTN)',
+                    'REVISI LUPA FINGER IN/OUT (LAMPIRKAN TIMESHEET DI PERTANYAAN AKHIR)'
+                    ] %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="revisi_absen[]" value="{{ opsi }}">
+                        <label class="form-check-label">{{ opsi }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Keterangan Tambahan</label>
+                    <textarea class="form-control" name="keterangan_absen" rows="3"></textarea>
+                </div>
+            </div>
+
+            <div id="hm-section" style="display:none;">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Jenis Revisi HM</label>
+                    {% for opsi in [
+                    'TIMESHEET BELUM TERDATA',
+                    'JUMLAH INSENTIF TIDAK SESUAI',
+                    'JUMLAH RITASI TIDAK SESUAI',
+                    'HM TUNGGU BELUM MASUK',
+                    'HM MUTAR-MUTAR BELUM MASUK',
+                    'NOMOR UNIT SALAH'
+                    ] %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="revisi_hm[]" value="{{ opsi }}">
+                        <label class="form-check-label">{{ opsi }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">KM Awal</label>
+                        <input type="text" class="form-control" name="km_awal">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">KM Akhir</label>
+                        <input type="text" class="form-control" name="km_akhir">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">HM Awal</label>
+                        <input type="text" class="form-control" name="hm_awal">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">HM Akhir</label>
+                        <input type="text" class="form-control" name="hm_akhir">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Ritasi/Insentif</label>
+                        <input type="text" class="form-control" name="ritasi">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Keterangan Tambahan</label>
+                    <textarea class="form-control" name="keterangan_hm" rows="3"></textarea>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Lampiran (PDF / Gambar / Dokumen)</label>
+                <input class="form-control" type="file" name="lampiran" accept=".pdf,.jpg,.jpeg,.png" required>
+                <small class="text-muted">Hanya 1 file. Format: .pdf, .jpg, .jpeg, .png</small>
+            </div>
+
+            <button type="submit" class="btn btn-success w-100 mt-3">
+                <i class="bi bi-send"></i> Ajukan Revisi
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const kategori = document.getElementById("kategori");
+    const absenSection = document.getElementById("absen-section");
+    const hmSection = document.getElementById("hm-section");
+    kategori.addEventListener("change", function () {
+        absenSection.style.display = this.value === "ABSEN" ? "block" : "none";
+        hmSection.style.display = this.value === "HM" ? "block" : "none";
+    });
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+{% endblock %}
