@@ -3,4 +3,8 @@ Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
 pandas==2.2.2
 openpyxl==3.1.2
+<<<<<<< HEAD
 pyodbc==5.1.0
+=======
+pyodbc==5.1.0
+>>>>>>> d7eca2f8b4ac9013b80b99338b2afa3fccc57f6c
